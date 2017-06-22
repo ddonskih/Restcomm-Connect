@@ -21,17 +21,16 @@ package org.restcomm.connect.asr;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
-
 import com.iSpeech.SpeechResult;
 import com.iSpeech.iSpeechRecognizer;
-import static com.iSpeech.iSpeechRecognizer.*;
 import com.iSpeech.iSpeechRecognizer.SpeechRecognizerEvent;
+import org.apache.commons.configuration.Configuration;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.configuration.Configuration;
+import static com.iSpeech.iSpeechRecognizer.FREEFORM_DICTATION;
 
 /**
  * @author quintana.thomas@gmail.com (Thomas Quintana)

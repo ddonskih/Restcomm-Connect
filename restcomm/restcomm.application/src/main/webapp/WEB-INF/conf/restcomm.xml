@@ -27,6 +27,9 @@
 		<conference-entry-audio>beep.wav</conference-entry-audio>
 		<conference-exit-audio>alert.wav</conference-exit-audio>
 
+		<!-- Speech to text default driver -->
+		<default-driver>google-api</default-driver>
+
 		<!-- Cache settings. -->
 		<cache-path>${restcomm:home}/cache</cache-path>
 		<cache-uri>/restcomm/cache</cache-uri>
