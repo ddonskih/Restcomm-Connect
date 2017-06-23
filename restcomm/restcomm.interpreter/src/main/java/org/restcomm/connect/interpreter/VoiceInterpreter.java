@@ -28,6 +28,7 @@ import akka.pattern.AskTimeoutException;
 import akka.util.Timeout;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
@@ -313,10 +314,17 @@ public final class VoiceInterpreter extends BaseVoiceInterpreter {
         transitions.add(new Transition(finishRecording, ready));
         transitions.add(new Transition(finishRecording, finished));
         transitions.add(new Transition(processingGatherChildren, finished));
+
         transitions.add(new Transition(gathering, finished));
+
         transitions.add(new Transition(finishGathering, ready));
         transitions.add(new Transition(finishGathering, finishGathering));
         transitions.add(new Transition(finishGathering, finished));
+
+        transitions.add(new Transition(continuousGathering, ready));
+        transitions.add(new Transition(continuousGathering, finishGathering));
+        transitions.add(new Transition(continuousGathering, finished));
+
         transitions.add(new Transition(creatingSmsSession, finished));
         transitions.add(new Transition(sendingSms, ready));
         transitions.add(new Transition(sendingSms, startDialing));
@@ -782,10 +790,14 @@ public final class VoiceInterpreter extends BaseVoiceInterpreter {
             else if (is(gathering) || is(continuousGathering) || is(finishGathering)) {
                 final MediaGroupResponse<CollectedResult> dtmfResponse = (MediaGroupResponse<CollectedResult>) message;
                 CollectedResult data = dtmfResponse.get();
-                if (data.isAsr()) {
+                logger.info("!!!" + VoiceInterpreter.class.getName() + ": CollectedResult = " + data);
+                if (data.isAsr() && data.isPartial()) {
+                    logger.info("!!!" + VoiceInterpreter.class.getName() + ": goto continuousGathering");
                     fsm.transition(message, continuousGathering);
                 } else if (!super.dtmfReceived) {
+                    System.out.println("!!!" + VoiceInterpreter.class.getName() + ": !super.dtmfReceived");
                     if (sender == call) {
+                        logger.info("!!!" + VoiceInterpreter.class.getName() + ": sender == call");
                         // DTMF using SIP INFO, check if all digits collected here
                         collectedDigits.append(dtmfResponse.get());
                         // Collected digits == requested num of digits the complete the collect digits
@@ -808,7 +820,7 @@ public final class VoiceInterpreter extends BaseVoiceInterpreter {
                             }
                         }
                     } else {
-                        collectedDigits.append(dtmfResponse.get());
+                        collectedDigits.append(dtmfResponse.get().getResult());
                         fsm.transition(message, finishGathering);
                     }
                 }
@@ -1046,6 +1058,21 @@ public final class VoiceInterpreter extends BaseVoiceInterpreter {
         }
     }
 
+    private boolean isEmptyDownloaderResponse(DownloaderResponse response) throws IOException {
+        final String type = response.get().getContentType();
+        if (type == null)
+            return true;
+
+        if (type.contains("audio/wav") || type.contains("audio/wave") || type.contains("audio/x-wav")) {
+            return false;
+        }
+
+        if (type.contains("text/plain") || type.contains("text/xml") || type.contains("application/xml") || type.contains("text/html")) {
+            return StringUtils.isEmpty(response.get().getContentAsString());
+        }
+        return true;
+    }
+
     private void onDownloaderResponse(Object message, State state) throws IOException, TransitionFailedException, TransitionNotFoundException, TransitionRollbackException {
         final DownloaderResponse response = (DownloaderResponse) message;
         if (logger.isDebugEnabled()) {
@@ -1054,6 +1081,10 @@ public final class VoiceInterpreter extends BaseVoiceInterpreter {
                 logger.debug("statusCode " + response.get().getStatusCode());
         }
         if (response.succeeded() && HttpStatus.SC_OK == response.get().getStatusCode()) {
+            if (continuousGathering.equals(state) && isEmptyDownloaderResponse(response)) {
+                //no need change state
+                return;
+            }
             if (conferencing.equals(state)) {
                 //This is the downloader response for Conferencing waitUrl
                 if (parser != null) {

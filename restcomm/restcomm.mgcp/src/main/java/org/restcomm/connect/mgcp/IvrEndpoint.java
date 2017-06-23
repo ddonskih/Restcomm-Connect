@@ -43,7 +43,6 @@ import org.restcomm.connect.commons.patterns.Observe;
 import org.restcomm.connect.commons.patterns.StopObserving;
 import org.snmp4j.smi.OctetString;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import static jain.protocol.ip.mgcp.message.parms.ReturnCode.Transaction_Executed_Normally;
@@ -188,7 +187,7 @@ public final class IvrEndpoint extends GenericEndpoint {
         final EventName[] observedEvents = notification.getObservedEvents();
         if (observedEvents.length == 1) {
             final MgcpEvent event = observedEvents[0].getEventIdentifier();
-            final Map<String, String> parameters = parse(event.getParms());
+            final Map<String, String> parameters = MgcpUtil.parseParameters(event.getParms());
             final int code = Integer.parseInt(parameters.get("rc"));
             switch (code) {
                 case 326: // No digits
@@ -201,7 +200,7 @@ public final class IvrEndpoint extends GenericEndpoint {
                         digits = EMPTY_STRING;
                     }
                     final IvrEndpointResponse result = new IvrEndpointResponse(
-                            new CollectedResult(digits, AsrwgsSignal.REQUEST_ASRWGS.getName().equals(event.getName())));
+                            new CollectedResult(digits, AsrwgsSignal.REQUEST_ASRWGS.getName().equals(event.getName()), false));
                     for (final ActorRef observer : observers) {
                         observer.tell(result, self);
                     }
@@ -214,7 +213,7 @@ public final class IvrEndpoint extends GenericEndpoint {
                             asrr = OctetString.fromHexString(asrr).toString();
                         }
                         // Notify the observers that the event successfully completed.
-                        final IvrEndpointResponse result = new IvrEndpointResponse(new CollectedResult(asrr, true));
+                        final IvrEndpointResponse result = new IvrEndpointResponse(new CollectedResult(asrr, true, true));
                         for (final ActorRef observer : observers) {
                             observer.tell(result, self);
                         }
@@ -231,17 +230,4 @@ public final class IvrEndpoint extends GenericEndpoint {
         }
     }
 
-    private Map<String, String> parse(final String input) {
-        final Map<String, String> parameters = new HashMap<String, String>();
-        final String[] tokens = input.split(" ");
-        for (final String token : tokens) {
-            final String[] values = token.split("=");
-            if (values.length == 1) {
-                parameters.put(values[0], null);
-            } else if (values.length == 2) {
-                parameters.put(values[0], values[1]);
-            }
-        }
-        return parameters;
-    }
 }

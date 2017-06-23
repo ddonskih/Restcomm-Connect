@@ -18,7 +18,6 @@
  *
  */
 package org.restcomm.connect.mgcp;
-
 import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -39,6 +38,7 @@ import jain.protocol.ip.mgcp.message.Constants;
 import jain.protocol.ip.mgcp.message.NotificationRequest;
 import jain.protocol.ip.mgcp.message.Notify;
 import jain.protocol.ip.mgcp.message.parms.ConnectionIdentifier;
+import jain.protocol.ip.mgcp.message.parms.EventName;
 import jain.protocol.ip.mgcp.message.parms.NotifiedEntity;
 import org.restcomm.connect.commons.util.RevolvingCounter;
 
@@ -108,7 +108,7 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
         final MediaSession session = request.session();
         final String endpointName = request.endpointName();
         Props props = null;
-        if(endpointName == null){
+        if (endpointName == null) {
             props = new Props(new UntypedActorFactory() {
                 private static final long serialVersionUID = 1L;
 
@@ -117,7 +117,7 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
                     return new BridgeEndpoint(gateway, session, agent, domain, timeout);
                 }
             });
-        }else{
+        } else {
             props = new Props(new UntypedActorFactory() {
                 private static final long serialVersionUID = 1L;
 
@@ -156,13 +156,13 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
         final MediaSession session = request.session();
         final String endpointName = request.endpointName();
         Props props = new Props(new UntypedActorFactory() {
-                private static final long serialVersionUID = 1L;
+            private static final long serialVersionUID = 1L;
 
-                @Override
-                public UntypedActor create() throws Exception {
-                    return new IvrEndpoint(gateway, session, agent, domain, timeout, endpointName);
-                }
-            });
+            @Override
+            public UntypedActor create() throws Exception {
+                return new IvrEndpoint(gateway, session, agent, domain, timeout, endpointName);
+            }
+        });
         return system.actorOf(props);
     }
 
@@ -198,11 +198,11 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
     }
 
     private MediaSession getSession() {
-        MediaSession s=null;
-        try{
+        MediaSession s = null;
+        try {
             s = new MediaSession((int) sessionIdPool.get());
-        }catch(Exception e){
-            logger.error("Exception in getSession: "+e.getMessage() +" is MediaGateway actor terminated? "+self().isTerminated() +" current object snapshot: \n"+this.toString(), e);
+        } catch (Exception e) {
+            logger.error("Exception in getSession: " + e.getMessage() + " is MediaGateway actor terminated? " + self().isTerminated() + " current object snapshot: \n" + this.toString(), e);
         }
         return s;
     }
@@ -252,7 +252,7 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
             //provider = stack.createProvider();
             provider.addJainMgcpListener(this);
         } catch (final TooManyListenersException exception) {
-        //} catch (final CreateProviderException exception) {
+            //} catch (final CreateProviderException exception) {
             logger.error(exception, "Could not create a JAIN MGCP provider.");
         }
         agent = new NotifiedEntity("restcomm", localIp.getHostAddress(), localPort);
@@ -264,6 +264,11 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
         transactionIdPool = new RevolvingCounter(1, Long.MAX_VALUE);
     }
 
+    private boolean isPartialNotify(final Notify notify) {
+        EventName[] events = notify.getObservedEvents();
+        return events != null && events.length != 0 && MgcpUtil.isPartialNotify(events[events.length - 1]);
+    }
+
     @Override
     public void processMgcpCommandEvent(final JainMgcpCommandEvent event) {
         final int value = event.getObjectIdentifier();
@@ -271,7 +276,13 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
             case Constants.CMD_NOTIFY: {
                 final Notify notify = (Notify) event;
                 final String id = notify.getRequestIdentifier().toString();
-                final ActorRef listener = notificationListeners.remove(id);
+
+                final ActorRef listener;
+                if (isPartialNotify(notify)) {
+                    listener = notificationListeners.get(id);
+                } else {
+                    listener = notificationListeners.remove(id);
+                }
                 if (listener != null) {
                     listener.tell(notify, self());
                 }
@@ -295,8 +306,8 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
         final ActorRef self = self();
         final ActorRef sender = sender();
 
-        if (logger.isDebugEnabled()){
-            logger.debug("MediaGateway onReceive. self.isTerminated: "+self.isTerminated()+" | Processing "+klass.getName()+" | object snapshot: \n"+this.toString());
+        if (logger.isDebugEnabled()) {
+            logger.debug("MediaGateway onReceive. self.isTerminated: " + self.isTerminated() + " | Processing " + klass.getName() + " | object snapshot: \n" + this.toString());
         }
         if (PowerOnMediaGateway.class.equals(klass)) {
             powerOn(message);
@@ -332,7 +343,7 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
         } else if (DestroyEndpoint.class.equals(klass)) {
             final DestroyEndpoint request = (DestroyEndpoint) message;
             if (logger.isInfoEnabled())
-                logger.info("Gateway: "+self().path()+" about to stop endpoint path: "+request.endpoint().path()+" isTerminated: "+request.endpoint().isTerminated()+" sender: "+sender().path());
+                logger.info("Gateway: " + self().path() + " about to stop endpoint path: " + request.endpoint().path() + " isTerminated: " + request.endpoint().isTerminated() + " sender: " + sender().path());
             while (notificationListeners.containsValue(request.endpoint())) {
                 notificationListeners.values().remove(request.endpoint());
             }
@@ -355,12 +366,12 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
             request.getRequestIdentifier().setRequestIdentifier(id);
             notificationListeners.put(id, sender);
         }
-        provider.sendMgcpEvents(new JainMgcpEvent[] { command });
+        provider.sendMgcpEvents(new JainMgcpEvent[]{command});
     }
 
     private void send(final Object message) {
         final JainMgcpResponseEvent response = (JainMgcpResponseEvent) message;
-        provider.sendMgcpEvents(new JainMgcpEvent[] { response });
+        provider.sendMgcpEvents(new JainMgcpEvent[]{response});
     }
 
     @Override
@@ -375,8 +386,9 @@ public final class MediaGateway extends UntypedActor implements JainMgcpListener
 
     @Override
     public void postStop() {
-        if (logger.isDebugEnabled()){
-            logger.debug("MediaGateway at postStop, here is object snapshot: \n"+this.toString());
+        if (logger.isDebugEnabled()) {
+            logger.debug("MediaGateway at postStop, here is object snapshot: \n" + this.toString());
         }
     }
+
 }

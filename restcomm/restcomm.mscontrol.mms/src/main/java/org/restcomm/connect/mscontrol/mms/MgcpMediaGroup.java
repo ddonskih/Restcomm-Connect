@@ -252,7 +252,9 @@ public class MgcpMediaGroup extends MediaGroup {
         }
         if (originator != null)
             this.originator.tell(event, self);
-        ivrInUse = false;
+        if (!response.get().isPartial()) {
+            ivrInUse = false;
+        }
     }
 
     protected void observe(final Object message) {
