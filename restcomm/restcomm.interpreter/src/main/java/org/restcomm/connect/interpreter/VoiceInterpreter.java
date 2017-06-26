@@ -1481,7 +1481,7 @@ public class VoiceInterpreter extends BaseVoiceInterpreter {
         final List<NameValuePair> parameters = new ArrayList<NameValuePair>();
         final String callSid = callInfo.sid().toString();
         parameters.add(new BasicNameValuePair("CallSid", callSid));
-        parameters.add(new BasicNameValuePair("InstanceId", RestcommConfiguration.getInstance().getMain().getInstanceId()));
+        parameters.add(new BasicNameValuePair("InstanceId", restcommConfiguration.getMain().getInstanceId()));
         if (outboundCallInfo != null) {
             final String outboundCallSid = outboundCallInfo.sid().toString();
             parameters.add(new BasicNameValuePair("OutboundCallSid", outboundCallSid));
@@ -1686,7 +1686,7 @@ public class VoiceInterpreter extends BaseVoiceInterpreter {
                 // Create a call detail record for the call.
                 final CallDetailRecord.Builder builder = CallDetailRecord.builder();
                 builder.setSid(callInfo.sid());
-                builder.setInstanceId(RestcommConfiguration.getInstance().getMain().getInstanceId());
+                builder.setInstanceId(restcommConfiguration.getMain().getInstanceId());
                 builder.setDateCreated(callInfo.dateCreated());
                 builder.setAccountSid(accountId);
                 builder.setTo(callInfo.to());

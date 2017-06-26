@@ -46,6 +46,7 @@ import org.restcomm.connect.commons.cache.DiskCacheFactory;
 import org.restcomm.connect.commons.cache.DiskCacheRequest;
 import org.restcomm.connect.commons.cache.DiskCacheResponse;
 import org.restcomm.connect.commons.cache.HashGenerator;
+import org.restcomm.connect.commons.configuration.RestcommConfiguration;
 import org.restcomm.connect.commons.dao.CollectedResult;
 import org.restcomm.connect.commons.dao.Sid;
 import org.restcomm.connect.commons.fsm.Action;
@@ -261,8 +262,11 @@ public abstract class BaseVoiceInterpreter extends UntypedActor {
     final Set<Transition> transitions = new HashSet<Transition>();
     int recordingDuration = -1;
 
+    protected RestcommConfiguration restcommConfiguration;
+
     public BaseVoiceInterpreter() {
         super();
+        restcommConfiguration = RestcommConfiguration.getInstance();
         final ActorRef source = self();
         this.system = context().system();
         // 20 States in common
@@ -1592,8 +1596,7 @@ public abstract class BaseVoiceInterpreter extends UntypedActor {
             }
 
             // Start gathering.
-            String defaultDriver = configuration.subset("runtime-settings").getString("mg-asr-drivers[@default]");
-            final Collect collect = new Collect(defaultDriver, type, gatherPrompts, null, timeout, finishOnKey, numberOfDigits, lang, hints);
+            final Collect collect = new Collect(restcommConfiguration.getMgAsr().getDefaultDriver(), type, gatherPrompts, null, timeout, finishOnKey, numberOfDigits, lang, hints);
             call.tell(collect, source);
             // Some clean up.
             gatherChildren = null;
