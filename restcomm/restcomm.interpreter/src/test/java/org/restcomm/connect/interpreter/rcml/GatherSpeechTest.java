@@ -1,6 +1,10 @@
 package org.restcomm.connect.interpreter.rcml;
 
-import akka.actor.*;
+import akka.actor.Actor;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+import akka.actor.UntypedActorFactory;
 import akka.testkit.JavaTestKit;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -29,15 +33,21 @@ import org.restcomm.connect.http.client.HttpRequestDescriptor;
 import org.restcomm.connect.http.client.HttpResponseDescriptor;
 import org.restcomm.connect.interpreter.StartInterpreter;
 import org.restcomm.connect.interpreter.VoiceInterpreter;
+import org.restcomm.connect.interpreter.rcml.domain.GatherAttributes;
 import org.restcomm.connect.mscontrol.api.messages.Collect;
 import org.restcomm.connect.mscontrol.api.messages.MediaGroupResponse;
 import org.restcomm.connect.mscontrol.api.messages.Play;
-import org.restcomm.connect.telephony.api.*;
+import org.restcomm.connect.telephony.api.CallInfo;
+import org.restcomm.connect.telephony.api.CallResponse;
+import org.restcomm.connect.telephony.api.CallStateChanged;
+import org.restcomm.connect.telephony.api.GetCallInfo;
+import org.restcomm.connect.telephony.api.Hangup;
 
 import java.net.URI;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 /**
  * Created by hamsterksu on 6/24/17.
@@ -55,6 +65,16 @@ public class GatherSpeechTest {
 
     private String endRcml = "<Response><Hangup/></Response>";
     private String playRcml = "<Response><Play>" + playUri + "</Play></Response>";
+    private String gatherRcml = "<Response><Gather " +
+            GatherAttributes.ATTRIBUTE_INPUT + "=\"speech\" " +
+            GatherAttributes.ATTRIBUTE_ACTION + "=\"" + actionCallbackUri + "\" " +
+            GatherAttributes.ATTRIBUTE_PARTIAL_RESULT_CALLBACK + "=\"" + partialCallbackUri + "\" " +
+            GatherAttributes.ATTRIBUTE_NUM_DIGITS + "=\"1\" " +
+            GatherAttributes.ATTRIBUTE_TIME_OUT + "=\"60\">" +
+            "</Gather></Response>";
+    private String gatherEmpty = "<Response><Gather " +
+            GatherAttributes.ATTRIBUTE_PARTIAL_RESULT_CALLBACK + "=\"" + partialCallbackUri + "\">" +
+            "</Gather></Response>";
 
     public GatherSpeechTest() {
         super();
@@ -195,18 +215,11 @@ public class GatherSpeechTest {
                 HttpRequestDescriptor callback = expectMsgClass(HttpRequestDescriptor.class);
                 assertEquals(callback.getUri(), requestUri);
 
-                String gatherRcml = "<Response><Gather " +
-                        "input=\"speech\" " +
-                        "action=\"" + actionCallbackUri + "\" " +
-                        "partialResultCallback=\"" + partialCallbackUri + "\" " +
-                        "numDigits=\"1\" " +
-                        "timeout=\"60\">" +
-                        "</Gather></Response>";
                 interpreter.tell(new DownloaderResponse(getOkRcml(requestUri, gatherRcml)), observer);
 
                 expectMsgClass(Collect.class);
 
-                //generate partial response2
+                //generate partial response1
                 interpreter.tell(new MediaGroupResponse(new CollectedResult("1", true, true)), observer);
 
                 callback = expectMsgClass(HttpRequestDescriptor.class);
@@ -261,18 +274,11 @@ public class GatherSpeechTest {
                 HttpRequestDescriptor callback = expectMsgClass(HttpRequestDescriptor.class);
                 assertEquals(callback.getUri(), requestUri);
 
-                String gatherRcml = "<Response><Gather " +
-                        "input=\"speech\" " +
-                        "action=\"" + actionCallbackUri + "\" " +
-                        "partialResultCallback=\"" + partialCallbackUri + "\" " +
-                        "numDigits=\"1\" " +
-                        "timeout=\"60\">" +
-                        "</Gather></Response>";
                 interpreter.tell(new DownloaderResponse(getOkRcml(requestUri, gatherRcml)), observer);
 
                 expectMsgClass(Collect.class);
 
-                //generate partial response2
+                //generate partial response1
                 interpreter.tell(new MediaGroupResponse(new CollectedResult("1", true, true)), observer);
 
                 callback = expectMsgClass(HttpRequestDescriptor.class);
@@ -297,6 +303,49 @@ public class GatherSpeechTest {
                 interpreter.tell(new MediaGroupResponse(new CollectedResult("", false, false)), observer);
 
                 expectMsgClass(Hangup.class);
+            }
+        };
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testValidateDefaultAttributeValues() throws Exception {
+        new JavaTestKit(system) {
+            {
+                final ActorRef observer = getRef();
+                final ActorRef interpreter = createVoiceInterpreter(observer);
+                interpreter.tell(new StartInterpreter(observer), observer);
+
+                expectMsgClass(GetCallInfo.class);
+                interpreter.tell(new CallResponse(new CallInfo(
+                        new Sid("ACae6e420f425248d6a26948c17a9e2acf"),
+                        CallStateChanged.State.IN_PROGRESS,
+                        CreateCallType.SIP,
+                        "inbound",
+                        new DateTime(),
+                        null,
+                        "test", "test",
+                        "testTo",
+                        null,
+                        null,
+                        false,
+                        false,
+                        false,
+                        new DateTime())), observer);
+
+                expectMsgClass(Observe.class);
+
+                //wait for rcml downloading
+                HttpRequestDescriptor callback = expectMsgClass(HttpRequestDescriptor.class);
+                assertEquals(callback.getUri(), requestUri);
+
+                interpreter.tell(new DownloaderResponse(getOkRcml(requestUri, gatherEmpty)), observer);
+                Collect collect = expectMsgClass(Collect.class);
+                assertEquals(Collect.Type.DTMF, collect.type());
+                assertEquals("en-US", collect.lang());
+                assertEquals("#", collect.endInputKey());
+                assertSame(5, collect.timeout());
+                assertEquals("google", collect.getDriver());
             }
         };
     }
