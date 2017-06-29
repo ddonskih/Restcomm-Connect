@@ -50,7 +50,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 /**
- * Created by hamsterksu on 6/24/17.
+ * Created by gdubina on 6/24/17.
  */
 public class GatherSpeechTest {
 
@@ -102,13 +102,11 @@ public class GatherSpeechTest {
     }
 
     private Configuration getConfiguration(String path) throws ConfigurationException {
-
         XMLConfiguration xmlConfiguration = new XMLConfiguration();
         xmlConfiguration.setDelimiterParsingDisabled(true);
         xmlConfiguration.setAttributeSplittingDisabled(true);
         xmlConfiguration.load(path);
-        /*xmlConfiguration.setProperty("speech-synthesizer[@active]", TTSMock.class.getSimpleName());
-        xmlConfiguration.addProperty(TTSMock.class.getSimpleName() + "[@class]", TTSMock.class.getCanonicalName());*/
+
         return xmlConfiguration;
     }
 

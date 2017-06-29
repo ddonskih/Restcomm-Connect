@@ -4,7 +4,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.testkit.JavaTestKit;
-import jain.protocol.ip.mgcp.JainMgcpEvent;
 import jain.protocol.ip.mgcp.JainMgcpResponseEvent;
 import jain.protocol.ip.mgcp.message.NotificationRequest;
 import jain.protocol.ip.mgcp.message.NotificationRequestResponse;
@@ -79,7 +78,7 @@ public class IvrAsrEndpointTest {
                 final Observing observingResponse = expectMsgClass(Observing.class);
                 assertTrue(observingResponse.succeeded());
 
-                AsrwgsSignal asr = new AsrwgsSignal("no_name_driver", "en-US", Collections.singletonList(URI.create("hello.wav")), "#", 10, 10, 10, HINTS);
+                AsrSignal asr = new AsrSignal("no_name_driver", "en-US", Collections.singletonList(URI.create("hello.wav")), "#", 10, 10, 10, HINTS);
                 endpoint.tell(asr, observer);
                 final IvrEndpointResponse ivrResponse = expectMsgClass(IvrEndpointResponse.class);
                 assertTrue(ivrResponse.succeeded());
@@ -127,7 +126,7 @@ public class IvrAsrEndpointTest {
                 final Observing observingResponse = expectMsgClass(Observing.class);
                 assertTrue(observingResponse.succeeded());
 
-                AsrwgsSignal asr = new AsrwgsSignal("no_name_driver", "en-US", Collections.singletonList(URI.create("hello.wav")), "#", 10, 10, 10, HINTS);
+                AsrSignal asr = new AsrSignal("no_name_driver", "en-US", Collections.singletonList(URI.create("hello.wav")), "#", 10, 10, 10, HINTS);
                 endpoint.tell(asr, observer);
                 final IvrEndpointResponse ivrResponse = expectMsgClass(IvrEndpointResponse.class);
                 assertFalse(ivrResponse.succeeded());
@@ -162,7 +161,7 @@ public class IvrAsrEndpointTest {
                 final Observing observingResponse = expectMsgClass(Observing.class);
                 assertTrue(observingResponse.succeeded());
 
-                AsrwgsSignal asr = new AsrwgsSignal("no_name_driver", "en-US", Collections.singletonList(URI.create("hello.wav")), "#", 10, 10, 10, ASR_RESULT_TEXT);
+                AsrSignal asr = new AsrSignal("no_name_driver", "en-US", Collections.singletonList(URI.create("hello.wav")), "#", 10, 10, 10, ASR_RESULT_TEXT);
                 endpoint.tell(asr, observer);
                 final IvrEndpointResponse ivrResponse = expectMsgClass(IvrEndpointResponse.class);
                 assertTrue(ivrResponse.succeeded());
@@ -170,7 +169,7 @@ public class IvrAsrEndpointTest {
                 assertTrue(ivrResponse.get().isAsr());
 
                 // EndSignal to IVR
-                endpoint.tell(new StopEndpoint(AsrwgsSignal.REQUEST_ASRWGS), observer);
+                endpoint.tell(new StopEndpoint(AsrSignal.REQUEST_ASR), observer);
 
                 final IvrEndpointResponse ivrResponse2 = expectMsgClass(IvrEndpointResponse.class);
                 assertTrue(ivrResponse2.succeeded());
@@ -191,9 +190,6 @@ public class IvrAsrEndpointTest {
         @Override
         protected void event(final Object message, final ActorRef sender) {
             final ActorRef self = self();
-            if (message instanceof JainMgcpEvent) {
-                System.out.println(message.toString());
-            }
             final Class<?> klass = message.getClass();
             if (NotificationRequest.class.equals(klass)) {
                 // Send a successful response for this request.
@@ -201,7 +197,6 @@ public class IvrAsrEndpointTest {
                 final JainMgcpResponseEvent response = new NotificationRequestResponse(this,
                         ReturnCode.Transaction_Executed_Normally);
                 sender.tell(response, self);
-                System.out.println(response.toString());
 
                 // Send the notification.
                 Notify notify = createNotify(request, (int) transactionIdPool.get(), AUMgcpEvent.auoc.withParm("rc=101 asrr=" + ASR_RESULT_TEXT_HEX));
@@ -225,9 +220,6 @@ public class IvrAsrEndpointTest {
         @Override
         protected void event(final Object message, final ActorRef sender) {
             final ActorRef self = self();
-            if (message instanceof JainMgcpEvent) {
-                System.out.println(message.toString());
-            }
             final Class<?> klass = message.getClass();
             if (NotificationRequest.class.equals(klass)) {
                 // Send a successful response for this request.
@@ -236,7 +228,6 @@ public class IvrAsrEndpointTest {
                         ReturnCode.Transaction_Executed_Normally);
                 response.setTransactionHandle(request.getTransactionHandle());
                 sender.tell(response, self);
-                System.out.println(response.toString());
 
                 // Send the notification.
                 final Notify notify = createNotify(request, (int) transactionIdPool.get(), AUMgcpEvent.auof.withParm("rc=300"));
@@ -271,7 +262,6 @@ public class IvrAsrEndpointTest {
                 final JainMgcpResponseEvent response = new NotificationRequestResponse(this, ReturnCode.Transaction_Executed_Normally);
                 sender.tell(response, self);
                 // Send the notification.
-
                 Notify notify = createNotify(request, (int) transactionIdPool.get(), AUMgcpEvent.auoc.withParm("rc=101 asrr=" + ASR_RESULT_TEXT_HEX));
                 sender.tell(notify, self);
             }

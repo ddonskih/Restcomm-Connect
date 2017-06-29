@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Dmitriy Nadolenko
  */
-public class AsrwgsSignalTest {
+public class AsrSignalTest {
 
     public static final String DEFAULT_LANG = "en-US";
 
@@ -39,13 +39,11 @@ public class AsrwgsSignalTest {
     @Test
     public void testFormatting() {
         String expectedResult = "ip=hello.wav dr=no_name_driver ln=en-US eik=# mrt=100 wit=100 pst=50 hw=57:61:69:74";
-
-        AsrwgsSignal asrSignal = new AsrwgsSignal(driver, DEFAULT_LANG, initialPrompts, endInputKey, maximumRecTimer, waitingInputTimer,
+        AsrSignal asrSignal = new AsrSignal(driver, DEFAULT_LANG, initialPrompts, endInputKey, maximumRecTimer, waitingInputTimer,
                 timeAfterSpeech, hotWords);
         String actualResult = asrSignal.toString();
 
         assertEquals(expectedResult, actualResult);
-        System.out.println("Signal Parameters(actual): " + actualResult + "\n");
     }
 
     @Test
@@ -55,12 +53,10 @@ public class AsrwgsSignalTest {
            add(URI.create("world.wav"));
         }};
         String expectedResult = "ip=hello.wav,world.wav dr=no_name_driver ln=en-US eik=# mrt=100 wit=100 pst=50 hw=57:61:69:74";
-
-        AsrwgsSignal asrSignal = new AsrwgsSignal(driver, DEFAULT_LANG, initialPrompts, endInputKey, maximumRecTimer, waitingInputTimer,
+        AsrSignal asrSignal = new AsrSignal(driver, DEFAULT_LANG, initialPrompts, endInputKey, maximumRecTimer, waitingInputTimer,
                 timeAfterSpeech, hotWords);
         String actualResult = asrSignal.toString();
 
         assertEquals(expectedResult, actualResult);
-        System.out.println("Signal Parameters(actual): " + actualResult + "\n");
     }
 }

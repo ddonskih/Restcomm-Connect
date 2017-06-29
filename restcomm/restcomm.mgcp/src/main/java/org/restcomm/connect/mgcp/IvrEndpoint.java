@@ -71,8 +71,8 @@ public final class IvrEndpoint extends GenericEndpoint {
         this.agent = agent;
     }
 
-    private void sendAsr(final AsrwgsSignal message) {
-        MgcpEvent event = AsrwgsSignal.REQUEST_ASRWGS.withParm(message.toString());
+    private void sendAsr(final AsrSignal message) {
+        MgcpEvent event = AsrSignal.REQUEST_ASR.withParm(message.toString());
         sendRequest(new EventName(PACKAGE_NAME, event), REQUESTED_EVENTS);
     }
 
@@ -117,7 +117,6 @@ public final class IvrEndpoint extends GenericEndpoint {
         final NotificationRequest request = new NotificationRequest(self(), id, requestId);
         request.setSignalRequests(signal);
         request.setNotifiedEntity(agent);
-//        request.setRequestedEvents(REQUESTED_EVENTS);
         gateway.tell(request, self());
     }
 
@@ -141,8 +140,8 @@ public final class IvrEndpoint extends GenericEndpoint {
             onDestroyEndpoint((DestroyEndpoint) message, self, sender);
         } else if (Play.class.equals(klass) || PlayCollect.class.equals(klass) || PlayRecord.class.equals(klass)) {
             send(message);
-        } else if (AsrwgsSignal.class.equals(klass)) {
-            sendAsr((AsrwgsSignal) message);
+        } else if (AsrSignal.class.equals(klass)) {
+            sendAsr((AsrSignal) message);
         } else if (StopEndpoint.class.equals(klass)) {
             stop(message);
         } else if (Notify.class.equals(klass)) {
@@ -200,13 +199,13 @@ public final class IvrEndpoint extends GenericEndpoint {
                         digits = EMPTY_STRING;
                     }
                     final IvrEndpointResponse result = new IvrEndpointResponse(
-                            new CollectedResult(digits, AsrwgsSignal.REQUEST_ASRWGS.getName().equals(event.getName()), false));
+                            new CollectedResult(digits, AsrSignal.REQUEST_ASR.getName().equals(event.getName()), false));
                     for (final ActorRef observer : observers) {
                         observer.tell(result, self);
                     }
                     break;
                 }
-                case 101: { // Success(partial result). ASR can received only with code 101. In this case dc = null
+                case 101: { // Success(partial result)
                     if (parameters.containsKey("asrr")) {
                         String asrr = parameters.get("asrr");
                         if (!StringUtils.isEmpty(asrr)) {

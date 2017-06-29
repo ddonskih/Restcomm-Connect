@@ -23,7 +23,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.testkit.JavaTestKit;
-import jain.protocol.ip.mgcp.JainMgcpEvent;
 import jain.protocol.ip.mgcp.JainMgcpResponseEvent;
 import jain.protocol.ip.mgcp.message.NotificationRequest;
 import jain.protocol.ip.mgcp.message.NotificationRequestResponse;
@@ -185,9 +184,6 @@ public class IvrEndpointTest {
         @Override
         protected void event(final Object message, final ActorRef sender) {
             final ActorRef self = self();
-            if (message instanceof JainMgcpEvent) {
-                System.out.println(message.toString());
-            }
             final Class<?> klass = message.getClass();
             if (NotificationRequest.class.equals(klass)) {
                 // Send a successful response for this request.
@@ -195,14 +191,12 @@ public class IvrEndpointTest {
                 final JainMgcpResponseEvent response = new NotificationRequestResponse(this,
                         ReturnCode.Transaction_Executed_Normally);
                 sender.tell(response, self);
-                System.out.println(response.toString());
                 // Send the notification.
                 final MgcpEvent event = AUMgcpEvent.auoc.withParm("rc=100 dc=1");
                 final EventName[] events = { new EventName(AUPackage.AU, event) };
                 final Notify notify = new Notify(this, request.getEndpointIdentifier(), request.getRequestIdentifier(), events);
                 notify.setTransactionHandle((int) transactionIdPool.get());
                 sender.tell(notify, self);
-                System.out.println(notify.toString());
             }
         }
     }
@@ -216,9 +210,6 @@ public class IvrEndpointTest {
         @Override
         protected void event(final Object message, final ActorRef sender) {
             final ActorRef self = self();
-            if (message instanceof JainMgcpEvent) {
-                System.out.println(message.toString());
-            }
             final Class<?> klass = message.getClass();
             if (NotificationRequest.class.equals(klass)) {
                 // Send a successful response for this request.
@@ -227,14 +218,12 @@ public class IvrEndpointTest {
                         ReturnCode.Transaction_Executed_Normally);
                 response.setTransactionHandle(request.getTransactionHandle());
                 sender.tell(response, self);
-                System.out.println(response.toString());
                 // Send the notification.
                 final MgcpEvent event = AUMgcpEvent.auoc.withParm("rc=300");
                 final EventName[] events = { new EventName(AUPackage.AU, event) };
                 final Notify notify = new Notify(this, request.getEndpointIdentifier(), request.getRequestIdentifier(), events);
                 notify.setTransactionHandle((int) transactionIdPool.get());
                 sender.tell(notify, self);
-                System.out.println(notify.toString());
             }
         }
     }

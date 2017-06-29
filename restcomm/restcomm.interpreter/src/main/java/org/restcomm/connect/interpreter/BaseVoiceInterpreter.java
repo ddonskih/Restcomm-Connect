@@ -1699,7 +1699,7 @@ public abstract class BaseVoiceInterpreter extends UntypedActor {
     }
 
     final class FinishGathering extends CallbackGatherAction {
-        //        StringBuffer collectedDigits = new StringBuffer("");
+
         public FinishGathering(final ActorRef source) {
             super(source);
         }

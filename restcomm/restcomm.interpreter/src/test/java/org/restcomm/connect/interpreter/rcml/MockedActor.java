@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by hamsterksu on 6/24/17.
+ * Created by gdubina on 6/24/17.
  */
 public class MockedActor {
 
@@ -30,15 +30,13 @@ public class MockedActor {
     }
 
     public void onReceive(ActorRef self, ActorRef sender, Object msg) throws Throwable {
-        System.out.println("!!! MockedActor." + name + ": " + msg);
         List<Object> responses = this.mapping.get(msg.getClass());
         if (responses == null || responses.isEmpty()) {
-            System.err.println("!!! MockedActor." + name + ": unhandled request - " + msg);
+            System.err.println("MockedActor." + name + ": unhandled request - " + msg);
             return;
         }
         for (Object response : responses) {
             if (response instanceof Answer1) {
-                //noinspection unchecked
                 response = ((Answer1) response).answer(msg);
                 if (response instanceof Optional) {
                     Optional resp = ((Optional) response);

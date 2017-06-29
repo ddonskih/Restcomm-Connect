@@ -36,7 +36,7 @@ import org.restcomm.connect.commons.fsm.Transition;
 import org.restcomm.connect.commons.patterns.Observe;
 import org.restcomm.connect.commons.patterns.Observing;
 import org.restcomm.connect.commons.patterns.StopObserving;
-import org.restcomm.connect.mgcp.AsrwgsSignal;
+import org.restcomm.connect.mgcp.AsrSignal;
 import org.restcomm.connect.mgcp.CreateIvrEndpoint;
 import org.restcomm.connect.mgcp.CreateLink;
 import org.restcomm.connect.mgcp.DestroyEndpoint;
@@ -217,8 +217,8 @@ public class MgcpMediaGroup extends MediaGroup {
             signal = builder.build();
             this.lastEvent = AUMgcpEvent.aupc;
         } else {
-            this.lastEvent = AsrwgsSignal.REQUEST_ASRWGS;
-            signal = new AsrwgsSignal(request.getDriver(), request.lang(), request.prompts(), request.endInputKey(), request.timeout(), request.timeout(),
+            this.lastEvent = AsrSignal.REQUEST_ASR;
+            signal = new AsrSignal(request.getDriver(), request.lang(), request.prompts(), request.endInputKey(), request.timeout(), request.timeout(),
                     request.timeout(), request.getHints());
         }
         this.originator = sender();

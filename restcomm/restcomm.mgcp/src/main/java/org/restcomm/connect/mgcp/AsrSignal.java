@@ -9,12 +9,12 @@ import java.net.URI;
 import java.util.List;
 
 /**
- * Created by hamsterksu on 6/6/17.
+ * Created by gdubina on 6/6/17.
  */
 @Immutable
-public class AsrwgsSignal {
+public class AsrSignal {
 
-    public static final MgcpEvent REQUEST_ASRWGS = MgcpEvent.factory("asr", AUMgcpEvent.END_SIGNAL + 1);
+    public static final MgcpEvent REQUEST_ASR = MgcpEvent.factory("asr", AUMgcpEvent.END_SIGNAL + 1);
 
     private static final String SPACE_CHARACTER = " ";
 
@@ -27,8 +27,8 @@ public class AsrwgsSignal {
     private final String hotWords;
     private final String lang;
 
-    public AsrwgsSignal(String driver, String lang, List<URI> initialPrompts, String endInputKey, long maximumRecTimer, long waitingInputTimer,
-                        long timeAfterSpeech, String hotWords) {
+    public AsrSignal(String driver, String lang, List<URI> initialPrompts, String endInputKey, long maximumRecTimer, long waitingInputTimer,
+                     long timeAfterSpeech, String hotWords) {
         this.driver = driver;
         this.initialPrompts = initialPrompts;
         this.endInputKey = endInputKey;

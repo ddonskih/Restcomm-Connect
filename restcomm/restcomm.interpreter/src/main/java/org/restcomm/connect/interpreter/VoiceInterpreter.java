@@ -794,9 +794,8 @@ public class VoiceInterpreter extends BaseVoiceInterpreter {
                     logger.info("!!!" + VoiceInterpreter.class.getName() + ": goto continuousGathering");
                     fsm.transition(message, continuousGathering);
                 } else if (!super.dtmfReceived) {
-                    System.out.println("!!!" + VoiceInterpreter.class.getName() + ": !super.dtmfReceived");
                     if (sender == call) {
-                        logger.info("!!!" + VoiceInterpreter.class.getName() + ": sender == call");
+                        logger.info(VoiceInterpreter.class.getName() + ": sender == call");
                         // DTMF using SIP INFO, check if all digits collected here
                         collectedDigits.append(dtmfResponse.get());
                         // Collected digits == requested num of digits the complete the collect digits

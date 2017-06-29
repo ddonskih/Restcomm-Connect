@@ -6,7 +6,7 @@ package org.restcomm.connect.interpreter.rcml.domain;
  * @author Dmitriy Nadolenko
  */
 public class GatherAttributes {
-    // attribute names
+
     public static final String ATTRIBUTE_INPUT = "input";
     public static final String ATTRIBUTE_ACTION = "action";
     public static final String ATTRIBUTE_METHOD = "method";
